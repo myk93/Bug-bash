@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Website with Tabs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-container">
+        <div class="content-area">
+            <!-- Excel Toggle Switch -->
+    <div class="excel-toggle-container">
+        <div class="excel-toggle">
+            <input type="checkbox" id="excelToggle" class="excel-toggle-input">
+            <label for="excelToggle" class="excel-toggle-label">
+                <span class="excel-toggle-text left">Open in Excel for the web</span>
+                <span class="excel-toggle-slider"></span>
+                <span class="excel-toggle-text right">Download workbook</span>
+            </label>
+        </div>
+        <button id="resetButton" class="reset-button" type="button">
+            <span class="reset-icon">⚠️</span>
+            Reset Workspace
+        </button>
+    </div>
+
+    <div class="tab">
+        <button class="tablinks" data-tab="Grid">From Grid</button>
+        <button class="tablinks" data-tab="HTMLTable">From HTML Table</button>
+        <button class="tablinks" data-tab="PQQuery">From PQ Query</button>
+    </div>
+
+    <div id="Grid" class="tabcontent">
+        <h3>From Grid</h3>
+        <div class="grid-container">
+            <div class="grid-item">1</div>
+            <div class="grid-item">2</div>
+            <div class="grid-item">3</div>
+            <div class="grid-item">4</div>
+            <div class="grid-item">5</div>
+            <div class="grid-item">6</div>
+            <div class="grid-item">7</div>
+            <div class="grid-item">8</div>
+            <div class="grid-item">9</div>
+        </div>
+    </div>
+
+    <div id="HTMLTable" class="tabcontent">
+        <h3>From HTML Table</h3>
+        <table id="myTable">
+            <thead>
+                <tr>
+                    <th>Header 1</th>
+                    <th>Header 2</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Row 1, Cell 1</td>
+                    <td>Row 1, Cell 2</td>
+                </tr>
+                <tr>
+                    <td>Row 2, Cell 1</td>
+                    <td>Row 2, Cell 2</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="PQQuery" class="tabcontent">
+        <h3>From PQ Query</h3>
+        
+        <div class="pq-form-container">
+            <!-- Query Mashup Text Area -->
+            <div class="pq-input-group">
+                <label for="queryMashup" class="pq-label" title="Power Query M language code">query Mashup</label>
+                <textarea id="queryMashup" class="pq-textarea" placeholder="Enter Power Query M language code here..." rows="8"></textarea>
+            </div>
+            
+            <!-- Refresh On Open Toggle -->
+            <div class="pq-input-group">
+                <label class="pq-toggle-container" title="Auto-refresh when opened">
+                    <span class="pq-toggle-label">refresh On Open</span>
+                    <input type="checkbox" id="refreshOnOpen" class="pq-toggle-input">
+                    <span class="pq-toggle-slider"></span>
+                </label>
+            </div>
+            
+            <!-- Query Name Input -->
+            <div class="pq-input-group">
+                <label for="queryName" class="pq-label" title="Query identifier">query Name</label>
+                <input type="text" id="queryName" class="pq-input" value="Query1" placeholder="Query identifier">
+            </div>
+        </div>
+        
+        <!-- Mashup Examples Section -->
+        <div class="pq-examples-section">
+            <h4 class="pq-examples-title">Mashup Example</h4>
+            <div class="pq-examples-container">
+                <button class="pq-example-btn" data-example="1">Example 1</button>
+                <button class="pq-example-btn" data-example="2">Example 2</button>
+                <button class="pq-example-btn" data-example="3">Example 3</button>
+                <button class="pq-example-btn" data-example="4">Example 4</button>
+            </div>
+        </div>
+    </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="right-sidebar" id="rightSidebar">
+            <div class="sidebar-toggle" id="sidebarToggle">
+                <span class="toggle-icon">◀</span>
+            </div>
+            <div class="sidebar-content" id="sidebarContent">
+                <div class="sidebar-section">
+                    <h3>File Configs</h3>
+                
+                <!-- XLSX Upload Section -->
+                <div class="upload-section">
+                    <div class="drag-drop-area" id="dragDropArea">
+                        <div class="drag-drop-content">
+                            <span class="upload-icon">📊</span>
+                            <p>Drag & drop XLSX files here</p>
+                            <p class="upload-hint">or click to browse</p>
+                        </div>
+                        <input type="file" id="fileInput" accept=".xlsx,.xls" multiple style="display: none;">
+                    </div>
+                    
+                    <div class="config-inputs">
+                        <div class="input-group">
+                            <label for="tableName">Table Name:</label>
+                            <input type="text" id="tableName" value="Table1" class="config-input">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="sheetName">Sheet Name:</label>
+                            <input type="text" id="sheetName" value="Sheet1" class="config-input">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Doc Props Section -->
+                <div class="doc-props-section">
+                    <h4>Doc Props</h4>
+                    
+                    <div class="prop-inputs">
+                        <div class="input-group">
+                            <label for="docTitle">Title:</label>
+                            <input type="text" id="docTitle" class="prop-input" placeholder="Document title">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="docSubject">Subject:</label>
+                            <input type="text" id="docSubject" class="prop-input" placeholder="Document subject">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="docKeywords">Keywords:</label>
+                            <input type="text" id="docKeywords" class="prop-input" placeholder="Search keywords">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="docCreatedBy">Created By:</label>
+                            <input type="text" id="docCreatedBy" class="prop-input" placeholder="Author name">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="docDescription">Description:</label>
+                            <textarea id="docDescription" class="prop-input" placeholder="Document description" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="docLastModifiedBy">Last Modified By:</label>
+                            <input type="text" id="docLastModifiedBy" class="prop-input" placeholder="Last editor">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="docCategory">Category:</label>
+                            <input type="text" id="docCategory" class="prop-input" placeholder="Document category">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="docRevision">Revision:</label>
+                            <input type="text" id="docRevision" class="prop-input" placeholder="Version number">
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
