@@ -30,6 +30,11 @@ class SessionManager {
                 queryMashup: '',
                 refreshOnOpen: false,
                 queryName: 'Query1'
+            },
+            gridView: {
+                isGridView: false,  // false = HTML Table, true = As Grid
+                promoteHeaders: false,
+                adjustColumnNames: false
             }
         };
         
@@ -455,6 +460,26 @@ function restoreUIState() {
         if (queryNameElement) queryNameElement.value = state.pqQuery.queryName || 'Query1';
     }
     
+    // Restore Grid View state
+    if (state.gridView) {
+        const gridViewToggle = document.getElementById('gridViewToggle');
+        const gridOptions = document.getElementById('gridOptions');
+        const promoteHeadersElement = document.getElementById('promoteHeaders');
+        const adjustColumnNamesElement = document.getElementById('adjustColumnNames');
+        
+        if (gridViewToggle) {
+            gridViewToggle.checked = state.gridView.isGridView || false;
+            
+            // Show/hide grid options based on toggle state
+            if (gridOptions) {
+                gridOptions.style.display = state.gridView.isGridView ? 'flex' : 'none';
+            }
+        }
+        
+        if (promoteHeadersElement) promoteHeadersElement.checked = state.gridView.promoteHeaders || false;
+        if (adjustColumnNamesElement) adjustColumnNamesElement.checked = state.gridView.adjustColumnNames || false;
+    }
+    
     console.log('UI state restored:', state);
 }
 
@@ -513,6 +538,29 @@ function getPQQueryData() {
         refreshOnOpen,
         queryName
     };
+}
+
+/**
+ * Get current Grid View data
+ */
+function getGridViewData() {
+    const gridViewToggle = document.getElementById('gridViewToggle')?.checked || false;
+    const promoteHeaders = document.getElementById('promoteHeaders')?.checked || false;
+    const adjustColumnNames = document.getElementById('adjustColumnNames')?.checked || false;
+    
+    return {
+        isGridView: gridViewToggle,
+        promoteHeaders,
+        adjustColumnNames
+    };
+}
+
+/**
+ * Update Grid View data in session
+ */
+function updateGridView() {
+    const gridView = getGridViewData();
+    sessionManager.updateState({ gridView });
 }
 
 /**
@@ -656,6 +704,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Initialize PQ Query functionality
     initializePQQuery();
+    
+    // Initialize Grid functionality
+    initializeEditableGrid();
+    
+    // Initialize Grid View functionality
+    initializeGridView();
 });
 
 /**
@@ -964,4 +1018,450 @@ function setDocumentProperties(props) {
             element.value = props[key];
         }
     });
+}
+
+/**
+ * Initialize the editable grid functionality
+ */
+function initializeEditableGrid() {
+    // Grid state
+    let gridData = [];
+    let currentRows = 3;
+    let currentCols = 3;
+    
+    // Initialize with default 3x3 grid
+    createGrid(currentRows, currentCols);
+    
+    // Add event listeners
+    const updateBtn = document.getElementById('updateGrid');
+    const clearBtn = document.getElementById('clearGrid');
+    const importBtn = document.getElementById('importGrid');
+    const rowCountInput = document.getElementById('rowCount');
+    const colCountInput = document.getElementById('colCount');
+    
+    if (updateBtn) {
+        updateBtn.addEventListener('click', handleUpdateGrid);
+    }
+    
+    if (clearBtn) {
+        clearBtn.addEventListener('click', handleClearGrid);
+    }
+    
+    if (importBtn) {
+        importBtn.addEventListener('click', handleImportGrid);
+    }
+    
+    if (rowCountInput) {
+        rowCountInput.addEventListener('input', validateGridSize);
+    }
+    
+    if (colCountInput) {
+        colCountInput.addEventListener('input', validateGridSize);
+    }
+    
+    /**
+     * Create the editable grid with specified dimensions
+     */
+    function createGrid(rows, cols) {
+        const gridBody = document.getElementById('gridBody');
+        const gridInfo = document.getElementById('gridInfo');
+        
+        if (!gridBody) return;
+        
+        // Clear existing grid
+        gridBody.innerHTML = '';
+        
+        // Preserve existing data or initialize new data
+        if (gridData.length === 0 || gridData.length !== rows) {
+            gridData = Array(rows).fill().map(() => Array(cols).fill(''));
+        } else {
+            // Adjust existing data to new dimensions
+            gridData = gridData.slice(0, rows);
+            for (let i = 0; i < rows; i++) {
+                if (!gridData[i]) {
+                    gridData[i] = Array(cols).fill('');
+                } else {
+                    gridData[i] = gridData[i].slice(0, cols);
+                    while (gridData[i].length < cols) {
+                        gridData[i].push('');
+                    }
+                }
+            }
+        }
+        
+        // Create grid rows and cells
+        for (let i = 0; i < rows; i++) {
+            const row = document.createElement('tr');
+            
+            for (let j = 0; j < cols; j++) {
+                const cell = document.createElement('td');
+                const textarea = document.createElement('textarea');
+                
+                textarea.className = 'grid-cell';
+                textarea.value = gridData[i][j] || '';
+                textarea.placeholder = `R${i + 1}C${j + 1}`;
+                textarea.rows = 1;
+                
+                // Add event listeners for cell interactions
+                textarea.addEventListener('input', function() {
+                    gridData[i][j] = this.value;
+                    autoResizeTextarea(this);
+                    updateGridInSession();
+                });
+                
+                textarea.addEventListener('keydown', function(e) {
+                    handleCellNavigation(e, i, j, rows, cols);
+                });
+                
+                textarea.addEventListener('focus', function() {
+                    this.select();
+                });
+                
+                // Auto-resize on load
+                autoResizeTextarea(textarea);
+                
+                cell.appendChild(textarea);
+                row.appendChild(cell);
+            }
+            
+            gridBody.appendChild(row);
+        }
+        
+        // Update grid info
+        if (gridInfo) {
+            gridInfo.textContent = `${rows} rows × ${cols} columns`;
+        }
+        
+        // Update current dimensions
+        currentRows = rows;
+        currentCols = cols;
+        
+        console.log('Grid created:', rows, 'x', cols);
+    }
+    
+    /**
+     * Handle grid update button click
+     */
+    function handleUpdateGrid() {
+        const newRows = parseInt(rowCountInput.value) || 3;
+        const newCols = parseInt(colCountInput.value) || 3;
+        
+        if (newRows < 1 || newRows > 20 || newCols < 1 || newCols > 20) {
+            showNotification('Grid size must be between 1x1 and 20x20', 'error');
+            return;
+        }
+        
+        createGrid(newRows, newCols);
+        showNotification(`Grid updated to ${newRows}×${newCols}`, 'success');
+    }
+    
+    /**
+     * Handle clear grid button click
+     */
+    function handleClearGrid() {
+        const confirmed = confirm('Clear all grid data? This action cannot be undone.');
+        if (!confirmed) return;
+        
+        gridData = Array(currentRows).fill().map(() => Array(currentCols).fill(''));
+        
+        // Clear all textareas
+        const cells = document.querySelectorAll('.grid-cell');
+        cells.forEach(cell => {
+            cell.value = '';
+            autoResizeTextarea(cell);
+        });
+        
+        showNotification('Grid cleared successfully', 'success');
+        updateGridInSession();
+    }
+    
+    /**
+     * Handle import grid data
+     */
+    function handleImportGrid() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.csv,.txt';
+        
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    const rows = content.split('\n').filter(row => row.trim());
+                    const importedData = rows.map(row => {
+                        // Simple CSV parsing (handles quoted values)
+                        const cells = [];
+                        let current = '';
+                        let inQuotes = false;
+                        
+                        for (let i = 0; i < row.length; i++) {
+                            const char = row[i];
+                            if (char === '"' && (i === 0 || row[i-1] === ',')) {
+                                inQuotes = true;
+                            } else if (char === '"' && inQuotes && (i === row.length - 1 || row[i+1] === ',')) {
+                                inQuotes = false;
+                            } else if (char === ',' && !inQuotes) {
+                                cells.push(current.replace(/""/g, '"'));
+                                current = '';
+                            } else if (!(char === '"' && (i === 0 || row[i-1] === ',' || i === row.length - 1 || row[i+1] === ','))) {
+                                current += char;
+                            }
+                        }
+                        cells.push(current.replace(/""/g, '"'));
+                        return cells;
+                    });
+                    
+                    if (importedData.length > 0) {
+                        const maxCols = Math.max(...importedData.map(row => row.length));
+                        const newRows = Math.min(importedData.length, 20);
+                        const newCols = Math.min(maxCols, 20);
+                        
+                        // Update input values
+                        rowCountInput.value = newRows;
+                        colCountInput.value = newCols;
+                        
+                        // Create new grid
+                        createGrid(newRows, newCols);
+                        
+                        // Fill with imported data
+                        for (let i = 0; i < newRows; i++) {
+                            for (let j = 0; j < newCols; j++) {
+                                if (importedData[i] && importedData[i][j] !== undefined) {
+                                    gridData[i][j] = importedData[i][j];
+                                    const cell = document.querySelector(`tr:nth-child(${i + 1}) td:nth-child(${j + 1}) .grid-cell`);
+                                    if (cell) {
+                                        cell.value = importedData[i][j];
+                                        autoResizeTextarea(cell);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        showNotification('Grid data imported successfully', 'success');
+                        updateGridInSession();
+                    }
+                } catch (error) {
+                    console.error('Import error:', error);
+                    showNotification('Error importing file. Please check file format.', 'error');
+                }
+            };
+            reader.readAsText(file);
+        });
+        
+        input.click();
+    }
+    
+    /**
+     * Validate grid size inputs
+     */
+    function validateGridSize() {
+        const rows = parseInt(rowCountInput.value);
+        const cols = parseInt(colCountInput.value);
+        
+        if (rows < 1 || rows > 20) {
+            rowCountInput.style.borderColor = '#f44336';
+        } else {
+            rowCountInput.style.borderColor = '#ddd';
+        }
+        
+        if (cols < 1 || cols > 20) {
+            colCountInput.style.borderColor = '#f44336';
+        } else {
+            colCountInput.style.borderColor = '#ddd';
+        }
+    }
+    
+    /**
+     * Handle keyboard navigation between cells
+     */
+    function handleCellNavigation(e, row, col, totalRows, totalCols) {
+        let targetRow = row;
+        let targetCol = col;
+        
+        switch (e.key) {
+            case 'Tab':
+                e.preventDefault();
+                if (e.shiftKey) {
+                    // Move to previous cell
+                    targetCol--;
+                    if (targetCol < 0) {
+                        targetCol = totalCols - 1;
+                        targetRow--;
+                        if (targetRow < 0) {
+                            targetRow = totalRows - 1;
+                        }
+                    }
+                } else {
+                    // Move to next cell
+                    targetCol++;
+                    if (targetCol >= totalCols) {
+                        targetCol = 0;
+                        targetRow++;
+                        if (targetRow >= totalRows) {
+                            targetRow = 0;
+                        }
+                    }
+                }
+                break;
+                
+            case 'ArrowUp':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    targetRow = Math.max(0, targetRow - 1);
+                }
+                break;
+                
+            case 'ArrowDown':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    targetRow = Math.min(totalRows - 1, targetRow + 1);
+                }
+                break;
+                
+            case 'ArrowLeft':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    targetCol = Math.max(0, targetCol - 1);
+                }
+                break;
+                
+            case 'ArrowRight':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    targetCol = Math.min(totalCols - 1, targetCol + 1);
+                }
+                break;
+                
+            case 'Enter':
+                e.preventDefault();
+                targetRow = Math.min(totalRows - 1, targetRow + 1);
+                break;
+        }
+        
+        // Focus target cell if different from current
+        if (targetRow !== row || targetCol !== col) {
+            const targetCell = document.querySelector(`tr:nth-child(${targetRow + 1}) td:nth-child(${targetCol + 1}) .grid-cell`);
+            if (targetCell) {
+                targetCell.focus();
+            }
+        }
+    }
+    
+    /**
+     * Auto-resize textarea based on content
+     */
+    function autoResizeTextarea(textarea) {
+        textarea.style.height = 'auto';
+        const scrollHeight = textarea.scrollHeight;
+        const minHeight = 40;
+        textarea.style.height = Math.max(minHeight, scrollHeight) + 'px';
+    }
+    
+    /**
+     * Update grid data in session
+     */
+    function updateGridInSession() {
+        if (sessionManager && sessionManager.isInitialized) {
+            sessionManager.updateState({
+                gridData: {
+                    data: gridData,
+                    rows: currentRows,
+                    cols: currentCols
+                }
+            });
+        }
+    }
+    
+    /**
+     * Load grid data from session
+     */
+    function loadGridFromSession() {
+        const state = sessionManager.getState();
+        if (state.gridData && state.gridData.data) {
+            const { data, rows, cols } = state.gridData;
+            if (rows && cols) {
+                currentRows = rows;
+                currentCols = cols;
+                gridData = data;
+                
+                // Update input values
+                rowCountInput.value = rows;
+                colCountInput.value = cols;
+                
+                // Recreate grid
+                createGrid(rows, cols);
+                
+                console.log('Grid loaded from session:', rows, 'x', cols);
+            }
+        }
+    }
+    
+    // Load grid from session if available
+    if (sessionManager && sessionManager.isInitialized) {
+        loadGridFromSession();
+    }
+}
+
+/**
+ * Initialize Grid View functionality
+ */
+function initializeGridView() {
+    const gridViewToggle = document.getElementById('gridViewToggle');
+    const gridOptions = document.getElementById('gridOptions');
+    const promoteHeadersElement = document.getElementById('promoteHeaders');
+    const adjustColumnNamesElement = document.getElementById('adjustColumnNames');
+    
+    if (!gridViewToggle || !gridOptions) {
+        console.warn('Grid view elements not found');
+        return;
+    }
+    
+    // Handle grid view toggle change
+    gridViewToggle.addEventListener('change', function() {
+        const isGridView = this.checked;
+        
+        // Show/hide grid options based on toggle state
+        if (isGridView) {
+            gridOptions.style.display = 'flex';
+            showNotification('Switched to Grid view', 'info');
+        } else {
+            gridOptions.style.display = 'none';
+            showNotification('Switched to HTML Table view', 'info');
+        }
+        
+        // Update session state
+        updateGridView();
+        
+        console.log('Grid view toggled:', isGridView ? 'As Grid' : 'HTML Table');
+    });
+    
+    // Handle promote headers checkbox change
+    if (promoteHeadersElement) {
+        promoteHeadersElement.addEventListener('change', function() {
+            updateGridView();
+            console.log('Promote headers:', this.checked);
+            
+            if (this.checked) {
+                showNotification('Headers will be promoted from first row', 'info');
+            }
+        });
+    }
+    
+    // Handle adjust column names checkbox change
+    if (adjustColumnNamesElement) {
+        adjustColumnNamesElement.addEventListener('change', function() {
+            updateGridView();
+            console.log('Adjust column names:', this.checked);
+            
+            if (this.checked) {
+                showNotification('Column names will be adjusted for duplicates/invalid names', 'info');
+            }
+        });
+    }
+    
+    console.log('Grid view functionality initialized');
 }
