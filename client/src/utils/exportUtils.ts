@@ -1,6 +1,5 @@
-import { QueryInfo, FileConfig, ExportRequest, UserSessionState } from '../types';
-import {workbookManager} from '@microsoft/connected-workbooks';
-// Import Microsoft Connected Workbooks for frontend Excel Web integration
+import { QueryInfo, FileConfig, UserSessionState } from '../types';
+import { workbookManager } from '@microsoft/connected-workbooks';
 
 
 /**

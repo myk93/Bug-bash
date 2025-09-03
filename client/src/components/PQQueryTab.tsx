@@ -8,7 +8,7 @@ interface PQQueryTabProps {
 }
 
 const examples = {
-  '1': '// Example 1: Basic table query\nlet\n    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content]\nin\n    Source',
+  '1': '// Example 1: Basic table query\n let\n Source = {1..10}   \nin \nSource',
   '2': '// Example 2: Filter and transform\nlet\n    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],\n    FilteredRows = Table.SelectRows(Source, each ([Column1] <> null))\nin\n    FilteredRows',
   '3': '// Example 3: Add custom column\nlet\n    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],\n    AddedCustom = Table.AddColumn(Source, "Custom", each "Value")\nin\n    AddedCustom',
   '4': '// Example 4: Group and aggregate\nlet\n    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],\n    GroupedRows = Table.Group(Source, {"Column1"}, {{"Count", Table.RowCount, Int64.Type}})\nin\n    GroupedRows'

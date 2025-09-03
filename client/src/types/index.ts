@@ -36,18 +36,7 @@ export interface UserSessionState {
   uploads: any[];
 }
 
-export interface SessionResponse {
-  success: boolean;
-  sessionId?: string;
-  message?: string;
-  session?: {
-    sessionId: string;
-    createdAt: string;
-    lastActivity: string;
-    uiState: UserSessionState;
-    workspaceData: any;
-  };
-}
+// SessionResponse interface removed - no longer needed for pure frontend app
 
 // Query Types
 export interface QueryInfo {
@@ -85,8 +74,4 @@ export interface NotificationOptions {
 // Tab Types
 export type TabName = 'Grid' | 'PQQuery';
 
-// Export Request Types
-export interface ExportRequest {
-  queryInfo: QueryInfo;
-  fileConfig: FileConfig;
-}
+// Export Request Types removed - no longer needed for pure frontend app
