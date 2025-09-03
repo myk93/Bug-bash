@@ -94,6 +94,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     showNotification(`File "${file.name}" uploaded successfully`, 'success');
     setUploadedFile(file);
     
+    // Add file to session state uploads array
+    updateState({
+      uploads: [...state.uploads, file]
+    });
+    
     console.log('File uploaded:', file.name, 'Size:', file.size, 'Type:', file.type);
   };
 

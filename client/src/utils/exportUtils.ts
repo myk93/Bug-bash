@@ -124,8 +124,11 @@ export const collectFileConfigData = (state: UserSessionState): FileConfig => {
     fileConfig.TempleteSettings = templeteSettings;
   }
   
-  // templateFile is left undefined for now as specified
-  // fileConfig.templateFile = undefined;
+    // Set templateFile to the most recently uploaded file if available
+  if (state.uploads && state.uploads.length > 0) {
+    // Use the most recent upload (last item in array)
+    fileConfig.templateFile = state.uploads[state.uploads.length - 1];
+  }
   
   return fileConfig;
 };
