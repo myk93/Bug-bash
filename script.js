@@ -342,6 +342,21 @@ function handleDownloadWorkbook() {
 }
 
 /**
+ * Function to handle "Export" action
+ */
+function handleExportData() {
+    console.log('Exporting data...');
+    // Add your logic here for exporting data
+    // This could export the grid data, query results, etc.
+    showNotification('Exporting data...', 'info');
+    
+    // You can add specific export logic here, for example:
+    // - Export grid data as CSV/Excel
+    // - Export query results
+    // - Export current workspace state
+}
+
+/**
  * Function to show notification
  */
 function showNotification(message) {
@@ -683,6 +698,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     const resetButton = document.getElementById('resetButton');
     if (resetButton) {
         resetButton.addEventListener('click', resetUserSession);
+    }
+    
+    // Add event listener for export button
+    const exportButton = document.getElementById('exportButton');
+    if (exportButton) {
+        exportButton.addEventListener('click', handleExportData);
     }
     
     // Make reset function available globally
