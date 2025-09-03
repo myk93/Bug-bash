@@ -1,3 +1,4 @@
+
 /**
  * SessionManager class handles frontend state management with session persistence
  * Integrates with backend session APIs for multi-user isolated experiences
@@ -342,18 +343,137 @@ function handleDownloadWorkbook() {
 }
 
 /**
+ * Generate filename for Excel export
+ * Creates a filename in the format: {tabName}_{dateTime}.xlsx
+ * @returns {string} Generated filename
+ */
+function generateFileName() {
+    try {
+        // Get the current active tab name
+        const activeTab = sessionManager.getState().activeTab;
+        
+        // Map backend tab names to user-friendly names
+        const tabNameMapping = {
+            'grid': 'Grid',
+            'pq-query': 'PQQuery',
+            'table': 'HTMLTable'
+        };
+        
+        const tabName = tabNameMapping[activeTab] || 'Export';
+        
+        // Get current date and time in readable format
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        
+        const dateTime = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+        
+        // Return filename in format: {tabName}_{dateTime}.xlsx
+        const filename = `${tabName}_${dateTime}.xlsx`;
+        
+        console.log('Generated filename:', filename);
+        return filename;
+        
+    } catch (error) {
+        console.error('Error generating filename:', error);
+        // Fallback filename if generation fails
+        const fallbackDateTime = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        return `Export_${fallbackDateTime}.xlsx`;
+    }
+}
+
+/**
+ * Handle Excel toggle functionality
+ * Checks toggle state and calls appropriate function (Excel Web or Download)
+ * @param {Blob} blob - The workbook blob to process
+ */
+async function handleExcelToggle(blob) {
+    try {
+        if (!blob) {
+            throw new Error('No workbook blob provided');
+        }
+        
+        // Get the Excel toggle element
+        const excelToggle = document.getElementById('excelToggle');
+        if (!excelToggle) {
+            throw new Error('Excel toggle element not found');
+        }
+        
+        // Generate filename
+        const filename = generateFileName();
+        
+        // Check toggle state - checked means Download mode, unchecked means Excel Web mode
+        const isDownloadMode = excelToggle.checked;
+        
+        console.log('Excel toggle state:', isDownloadMode ? 'Download' : 'Excel Web');
+        console.log('Processing with filename:', filename);
+        
+        if (isDownloadMode) {
+            // Download mode - trigger browser download
+            console.log('Triggering browser download...');
+            await downloadWorkbookBlob(blob, filename);
+            showNotification(`Workbook downloaded: ${filename}`, 'success');
+        } else {
+            // Excel Web mode - open in Excel Web
+            console.log('Opening in Excel Web...');
+            await openInExcelWeb(blob, filename);
+            showNotification(`Opened in Excel Web: ${filename}`, 'success');
+        }
+        
+    } catch (error) {
+        console.error('Error handling Excel toggle:', error);
+        showNotification(`Excel operation failed: ${error.message}`, 'error');
+        throw error;
+    }
+}
+
+/**
  * Function to handle "Export" action
  */
-function handleExportData() {
-    console.log('Exporting data...');
-    // Add your logic here for exporting data
-    // This could export the grid data, query results, etc.
-    showNotification('Exporting data...', 'info');
-    
-    // You can add specific export logic here, for example:
-    // - Export grid data as CSV/Excel
-    // - Export query results
-    // - Export current workspace state
+async function handleExportData() {
+    try {
+        console.log('Exporting data...');
+        showNotification('Preparing export...', 'info');
+        
+        // Get the current active tab from session manager
+        const activeTab = sessionManager.getState().activeTab;
+        console.log('Active tab for export:', activeTab);
+        
+        let blob = null;
+        
+        console.log('Generating workbook for active tab:', activeTab);
+        if (activeTab === 'pq-query') {
+            // For PQQuery tab: call generateQueryWorkbook to get the blob
+            console.log('Generating workbook for PQQuery tab...');
+            blob = await generateQueryWorkbook();
+        } else if (activeTab === 'grid') {
+            // For Grid tab: show alert that Grid export is not implemented yet
+            showNotification('Grid export is not implemented yet', 'warning');
+            console.log('Grid export not yet implemented');
+            return;
+        } else {
+            // For other tabs
+            showNotification(`Export not available for ${activeTab} tab`, 'warning');
+            console.log(`Export not available for tab: ${activeTab}`);
+            return;
+        }
+        
+        if (blob) {
+            // Call handleExcelToggle with the generated blob
+            console.log('Calling handleExcelToggle with generated blob...');
+            await handleExcelToggle(blob);
+        } else {
+            throw new Error('Failed to generate workbook blob');
+        }
+        
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        showNotification(`Export failed: ${error.message}`, 'error');
+    }
 }
 
 /**
@@ -552,6 +672,60 @@ function getPQQueryData() {
         queryMashup,
         refreshOnOpen,
         queryName
+    };
+}
+
+/**
+ * Get active tab data based on session manager state
+ * Returns structured data for the currently active tab
+ *
+ * This function determines which tab is currently active using sessionManager.getState().activeTab
+ * and collects the appropriate data based on the active tab:
+ *
+ * - For 'pq-query' tab: Collects QueryInfo data using getPQQueryData() and maps it to the
+ *   QueryInfo interface structure with queryMashup, refreshOnOpen, and queryName properties
+ * - For 'grid' tab: Currently returns null for gridData (logic to be implemented later)
+ *
+ * @returns {Object} Object containing:
+ *   - activeTab: string - The currently active tab ('pq-query', 'grid', etc.)
+ *   - queryInfo: QueryInfo|null - Query data if PQQuery tab is active, null otherwise
+ *   - gridData: any|null - Grid data if Grid tab is active (currently always null)
+ *
+ * QueryInfo interface structure:
+ * {
+ *   queryMashup: string,        // Power Query M language code
+ *   refreshOnOpen: boolean,     // Auto-refresh when opened
+ *   queryName?: string          // Query identifier (default: "Query1")
+ * }
+ */
+function getActiveTabData() {
+    // Get current active tab from session manager
+    const activeTab = sessionManager.getState().activeTab;
+    
+    let queryInfo = null;
+    let gridData = null;
+    console.log('Active tab data:', activeTab);
+    // Collect data based on active tab
+    if (activeTab === 'pq-query') {
+        // For PQQuery tab, collect QueryInfo data using existing function
+        const pqData = getPQQueryData();
+        
+        // Map to QueryInfo interface structure
+        queryInfo = {
+            queryMashup: pqData.queryMashup,
+            refreshOnOpen: pqData.refreshOnOpen,
+            queryName: pqData.queryName
+        };
+    } else if (activeTab === 'grid') {
+        // For Grid tab, leave logic empty for now as requested
+        gridData = null;
+    }
+    
+    // Return structured object with active tab and appropriate data
+    return {
+        activeTab: activeTab,
+        queryInfo: queryInfo,
+        gridData: gridData
     };
 }
 
@@ -1030,6 +1204,53 @@ function getDocumentProperties() {
 }
 
 /**
+ * Collect FileConfig data from the config tab fields
+ * Maps data to the FileConfig interface structure required by @microsoft/connected-workbooks
+ * Only includes properties that have actual user-entered data (not empty strings)
+ */
+function collectFileConfigData() {
+    const fileConfig = {};
+    
+    // Get document properties using existing helper function
+    const docProps = getDocumentProperties();
+    
+    // Filter out empty document properties
+    const filteredDocProps = {};
+    Object.keys(docProps).forEach(key => {
+        if (docProps[key] && docProps[key].trim() !== '') {
+            filteredDocProps[key] = docProps[key].trim();
+        }
+    });
+    
+    // Only add docProps if it has any non-empty values
+    if (Object.keys(filteredDocProps).length > 0) {
+        fileConfig.docProps = filteredDocProps;
+    }
+    
+    // Get file configs using existing helper function
+    const fileConfigs = getFileConfigs();
+    
+    // Create TempleteSettings object and filter out empty values
+    const templeteSettings = {};
+    if (fileConfigs.tableName && fileConfigs.tableName.trim() !== '') {
+        templeteSettings.tableName = fileConfigs.tableName.trim();
+    }
+    if (fileConfigs.sheetName && fileConfigs.sheetName.trim() !== '') {
+        templeteSettings.sheetName = fileConfigs.sheetName.trim();
+    }
+    
+    // Only add TempleteSettings if it has any non-empty values
+    if (Object.keys(templeteSettings).length > 0) {
+        fileConfig.TempleteSettings = templeteSettings;
+    }
+    
+    // templateFile is left undefined for now as specified
+    // fileConfig.templateFile = undefined;
+    
+    return fileConfig;
+}
+
+/**
  * Set document properties
  */
 function setDocumentProperties(props) {
@@ -1485,4 +1706,132 @@ function initializeGridView() {
     }
     
     console.log('Grid view functionality initialized');
+}
+
+/**
+ * Generate query workbook using the server-side API
+ *
+ * This function collects data from the currently active tab and file configurations,
+ * then calls the /api/export endpoint to create a workbook blob.
+ *
+ * @returns {Promise<Blob>} Promise that resolves to a workbook blob
+ * @throws {Error} If workbook generation fails
+ */
+async function generateQueryWorkbook() {
+    try {
+        console.log('Starting query workbook generation...');
+        
+        // Get QueryInfo data from the active tab
+        const activeTabData = getActiveTabData();
+        const queryInfo = activeTabData.queryInfo;
+        
+        if (!queryInfo) {
+            throw new Error('No query data available. Please ensure the PQQuery tab is active and has query information.');
+        }
+        
+        console.log('QueryInfo collected:', queryInfo);
+        
+        // Get FileConfig data from configuration
+        const fileConfigs = collectFileConfigData();
+        console.log('FileConfig collected:', fileConfigs);
+        
+        // Prepare data for API call
+        const requestData = {
+            queryInfo: queryInfo,
+            fileConfig: fileConfigs
+        };
+        
+        // Call the server-side API endpoint
+        console.log('Calling /api/export endpoint...');
+        const response = await fetch('/api/export', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Unknown server error' }));
+            throw new Error(`Server error: ${errorData.message || response.statusText}`);
+        }
+        
+        // Get the blob from the response
+        const workbookBlob = await response.blob();
+        
+        console.log('Query workbook generated successfully via API');
+        return workbookBlob;
+        
+    } catch (error) {
+        console.error('Error generating query workbook:', error);
+        
+        // Log additional details for debugging
+        if (error.message) {
+            console.error('Error message:', error.message);
+        }
+        if (error.stack) {
+            console.error('Error stack:', error.stack);
+        }
+        
+        // Re-throw the error for caller to handle
+        throw new Error(`Failed to generate query workbook: ${error.message || 'Unknown error'}`);
+    }
+}
+
+/**
+ * Download workbook blob using browser APIs
+ * @param {Blob} blob - The workbook blob to download
+ * @param {string} filename - The filename for the download
+ */
+async function downloadWorkbookBlob(blob, filename) {
+    try {
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up object URL
+        URL.revokeObjectURL(url);
+        
+        console.log('Download triggered for:', filename);
+    } catch (error) {
+        console.error('Error downloading workbook:', error);
+        throw error;
+    }
+}
+
+/**
+ * Open workbook in Excel Web using browser APIs
+ * @param {Blob} blob - The workbook blob to open
+ * @param {string} filename - The filename for the workbook
+ */
+async function openInExcelWeb(blob, filename) {
+    try {
+        console.log('Opening workbook in Excel Web via backend workbookManager...');
+        
+        // Create FormData to send blob to backend where workbookManager is available
+        const formData = new FormData();
+        formData.append('workbook', blob, filename);
+        
+        const response = await fetch('/api/excel-web/open', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+            throw new Error(`Backend error: ${errorData.message || response.statusText}`);
+        }
+        
+  
+    } catch (error) {
+        console.error('Error opening workbook in Excel Web:', error);
+        throw error;
+    }
 }

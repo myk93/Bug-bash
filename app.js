@@ -1,10 +1,12 @@
 const express = require('express');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const session = require('express-session');
 const multer = require('multer');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+// Removed Microsoft Connected Workbooks import - now handled in frontend
 
 const app = express();
 const port = 3000;
@@ -17,7 +19,32 @@ class UserSession {
         this.lastActivity = new Date();
         this.uiState = {
             activeTab: 'grid',
-            excelToggle: false
+            excelToggle: false,
+            sidebarCollapsed: false,
+            fileConfigs: {
+                tableName: 'Table1',
+                sheetName: 'Sheet1'
+            },
+            docProps: {
+                title: '',
+                subject: '',
+                keywords: '',
+                createdBy: '',
+                description: '',
+                lastModifiedBy: '',
+                category: '',
+                revision: ''
+            },
+            pqQuery: {
+                queryMashup: '',
+                refreshOnOpen: false,
+                queryName: 'Query1'
+            },
+            gridView: {
+                isGridView: false,
+                promoteHeaders: false,
+                adjustColumnNames: false
+            }
         };
         this.workspaceData = {
             gridData: [],
@@ -44,7 +71,32 @@ class UserSession {
     resetSession() {
         this.uiState = {
             activeTab: 'grid',
-            excelToggle: false
+            excelToggle: false,
+            sidebarCollapsed: false,
+            fileConfigs: {
+                tableName: 'Table1',
+                sheetName: 'Sheet1'
+            },
+            docProps: {
+                title: '',
+                subject: '',
+                keywords: '',
+                createdBy: '',
+                description: '',
+                lastModifiedBy: '',
+                category: '',
+                revision: ''
+            },
+            pqQuery: {
+                queryMashup: '',
+                refreshOnOpen: false,
+                queryName: 'Query1'
+            },
+            gridView: {
+                isGridView: false,
+                promoteHeaders: false,
+                adjustColumnNames: false
+            }
         };
         this.workspaceData = {
             gridData: [],
@@ -129,8 +181,8 @@ const upload = multer({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Static file serving (maintain backward compatibility)
-app.use(express.static('.'));
+// Static file serving - serve React build
+app.use(express.static('client/build'));
 
 // Input validation helpers
 function validateSessionId(sessionId) {
@@ -393,6 +445,8 @@ app.post('/api/session/:sessionId/upload', upload.single('file'), (req, res) => 
     }
 });
 
+// Export endpoints removed - functionality moved to frontend with @microsoft/connected-workbooks
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({
@@ -427,6 +481,11 @@ app.use('/api/*', (req, res) => {
         success: false,
         message: 'API endpoint not found'
     });
+});
+
+// Serve React app for all non-API routes (this must come after all API routes)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
 // Start server
