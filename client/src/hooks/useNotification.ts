@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { NotificationOptions } from '../types';
 
 interface Notification extends NotificationOptions {
@@ -12,12 +12,15 @@ export const useNotification = () => {
   const showNotification = useCallback((
     message: string,
     type: 'info' | 'success' | 'error' | 'warning' = 'info',
-    duration: number = 4000
+    duration?: number
   ) => {
+    // Set default duration based on type
+    const defaultDuration = duration ?? (type === 'error' ? 8000 : 4000);
+    
     const notification: Notification = {
       message,
       type,
-      duration,
+      duration: defaultDuration,
       id: Math.random().toString(36).substr(2, 9),
       timestamp: Date.now()
     };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UserSessionState } from '../types';
-import { generateQueryWorkbook, handleExcelToggle } from '../utils/exportUtils';
+import { generateQueryWorkbook, generateGridWorkbook, handleExcelToggle } from '../utils/exportUtils';
 
 interface ExcelToggleProps {
   excelToggle: boolean;
@@ -40,10 +40,9 @@ export const ExcelToggle: React.FC<ExcelToggleProps> = ({
         console.log('Generating workbook for PQQuery tab...');
         blob = await generateQueryWorkbook(state);
       } else if (activeTab === 'grid') {
-        // For Grid tab: show alert that Grid export is not implemented yet
-        showNotification('Grid export is not implemented yet', 'warning');
-        console.log('Grid export not yet implemented');
-        return;
+        // For Grid tab: call generateGridWorkbook to get the blob
+        console.log('Generating workbook for Grid tab...');
+        blob = await generateGridWorkbook(state);
       } else {
         // For other tabs
         showNotification(`Export not available for ${activeTab} tab`, 'warning');

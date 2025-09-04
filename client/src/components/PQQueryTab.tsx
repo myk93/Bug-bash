@@ -8,10 +8,10 @@ interface PQQueryTabProps {
 }
 
 const examples = {
-  '1': '// Example 1: Basic table query\n let\n Source = {1..10}   \nin \nSource',
-  '2': '// Example 2: Filter and transform\nlet\n    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],\n    FilteredRows = Table.SelectRows(Source, each ([Column1] <> null))\nin\n    FilteredRows',
-  '3': '// Example 3: Add custom column\nlet\n    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],\n    AddedCustom = Table.AddColumn(Source, "Custom", each "Value")\nin\n    AddedCustom',
-  '4': '// Example 4: Group and aggregate\nlet\n    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],\n    GroupedRows = Table.Group(Source, {"Column1"}, {{"Count", Table.RowCount, Int64.Type}})\nin\n    GroupedRows'
+  '1': 'let\n    Source = {1..10}   \nin \n    Source',
+  '2': `let\n    Source = Web.BrowserContents("https://en.wikipedia.org/wiki/1885_Louisville_Colonels_season"),\n    ExtractedTable = Html.Table(\n        Source,\n        {\n            {"Team", "TABLE.wikitable.MLBStandingsTable > * > TR > :nth-child(1)"},\n            {"W", "TABLE.wikitable.MLBStandingsTable > * > TR > :nth-child(2)"},\n            {"L", "TABLE.wikitable.MLBStandingsTable > * > TR > :nth-child(3)"},\n            {"Pct.", "TABLE.wikitable.MLBStandingsTable > * > TR > :nth-child(4)"},\n            {"GB", "TABLE.wikitable.MLBStandingsTable > * > TR > :nth-child(5)"},\n            {"Home", "TABLE.wikitable.MLBStandingsTable > * > TR > :nth-child(6)"},\n            {"Road", "TABLE.wikitable.MLBStandingsTable > * > TR > :nth-child(7)"}\n        },\n        [RowSelector="TABLE.wikitable.MLBStandingsTable > * > TR"]\n    ),\n    PromotedHeaders = Table.PromoteHeaders(ExtractedTable, [PromoteAllScalars = true]),\n    ChangedTypes = Table.TransformColumnTypes(\n        PromotedHeaders,\n        {\n            {"Team", type text},\n            {"W", Int64.Type},\n            {"L", Int64.Type},\n            {"Pct.", type number},\n            {"GB", type text},\n            {"Home", type text},\n            {"Road", type text}\n        }\n    )\nin\n    ChangedTypes`,
+  '3': 'let\n    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],\n    AddedCustom = Table.AddColumn(Source, "Custom", each "Value")\nin\n    AddedCustom',
+  '4': 'let\n    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],\n    GroupedRows = Table.Group(Source, {"Column1"}, {{"Count", Table.RowCount, Int64.Type}})\nin\n    GroupedRows'
 };
 
 export const PQQueryTab: React.FC<PQQueryTabProps> = ({ state, updateState, showNotification }) => {

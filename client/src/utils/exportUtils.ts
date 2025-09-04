@@ -1,4 +1,5 @@
-import { QueryInfo, FileConfig, UserSessionState } from '../types';
+import { TemplateSettings,QueryInfo, FileConfigs, Grid, GridConfig } from '@microsoft/connected-workbooks/dist/types';
+import { UserSessionState } from '../types';
 import { workbookManager } from '@microsoft/connected-workbooks';
 
 
@@ -87,8 +88,8 @@ export const getActiveTabData = (state: UserSessionState) => {
  * Maps data to the FileConfig interface structure required by @microsoft/connected-workbooks
  * Only includes properties that have actual user-entered data (not empty strings)
  */
-export const collectFileConfigData = (state: UserSessionState): FileConfig => {
-  const fileConfig: FileConfig = {};
+export const collectFileConfigData = (state: UserSessionState): FileConfigs => {
+  const fileConfig: FileConfigs = {};
   
   // Get document properties
   const docProps = state.docProps;
@@ -109,21 +110,21 @@ export const collectFileConfigData = (state: UserSessionState): FileConfig => {
   
   // Get file configs
   const fileConfigs = state.fileConfigs;
-  
-  // Create TempleteSettings object and filter out empty values
-  const templeteSettings: Record<string, string> = {};
+
+  // Create TemplateSettings object and filter out empty values
+  console.log("table name" + fileConfigs.tableName);
+  console.log("sheet name" + fileConfigs.sheetName);
+  let templateSettings: TemplateSettings = {};
   if (fileConfigs.tableName && fileConfigs.tableName.trim() !== '') {
-    templeteSettings.tableName = fileConfigs.tableName.trim();
+    templateSettings.tableName = fileConfigs.tableName.trim();
   }
   if (fileConfigs.sheetName && fileConfigs.sheetName.trim() !== '') {
-    templeteSettings.sheetName = fileConfigs.sheetName.trim();
+    templateSettings.sheetName = fileConfigs.sheetName.trim();
   }
-  
-  // Only add TempleteSettings if it has any non-empty values
-  if (Object.keys(templeteSettings).length > 0) {
-    fileConfig.TempleteSettings = templeteSettings;
-  }
-  
+  console.log('Collected TemplateSettings:', templateSettings);
+  // Only add TemplateSettings if it has any non-empty values
+  fileConfig.templateSettings = templateSettings;
+console.log('Collected FileConfig:', fileConfig);
     // Set templateFile to the most recently uploaded file if available
   if (state.uploads && state.uploads.length > 0) {
     // Use the most recent upload (last item in array)
@@ -155,6 +156,81 @@ export const generateQueryWorkbook = async (state: UserSessionState): Promise<Bl
     const workbookBlob = await workbookManager.generateSingleQueryWorkbook(queryInfo,undefined,fileConfigs);
     
     return workbookBlob;
+};
+
+/**
+ * Generate grid workbook using the workbook manager
+ * This function creates a Grid object from the session state and generates a workbook blob.
+ * It handles both HTML table mode and grid mode based on the toggle state.
+ */
+export const generateGridWorkbook = async (state: UserSessionState): Promise<Blob> => {
+  try {
+    // Check if we have grid data
+    if (!state.gridData || !state.gridData.data || state.gridData.data.length === 0) {
+      throw new Error('No grid data available. Please ensure the Grid tab has data.');
+    }
+
+    // Get FileConfig data from configuration
+    const fileConfigs = collectFileConfigData(state);
+    
+    // Check the grid view toggle state
+    const isGridView = state.gridView?.isGridView || false;
+    
+    if (isGridView) {
+      // Grid mode - create Grid object and use generateTableWorkbookFromGrid
+      console.log('Exporting in Grid mode...');
+      
+      // Convert string[][] to (string | number | boolean)[][]
+      const gridData: (string | number | boolean)[][] = state.gridData.data.map(row =>
+        row.map(cell => {
+          // Try to convert to number if possible
+          if (cell.trim() !== '' && !isNaN(Number(cell))) {
+            return Number(cell);
+          }
+          // Try to convert to boolean if possible
+          if (cell.toLowerCase() === 'true') return true;
+          if (cell.toLowerCase() === 'false') return false;
+          // Return as string
+          return cell;
+        })
+      );
+      
+      // Create GridConfig from state
+      const gridConfig: GridConfig = {
+        promoteHeaders: state.gridView?.promoteHeaders || false,
+        adjustColumnNames: state.gridView?.adjustColumnNames || false
+      };
+      
+      // Create Grid object
+      const grid: Grid = {
+        data: gridData,
+        config: gridConfig
+      };
+      
+      console.log('Generating workbook from Grid object:', grid);
+      const workbookBlob = await workbookManager.generateTableWorkbookFromGrid(grid, fileConfigs);
+      return workbookBlob;
+      
+    } else {
+      // HTML Table mode - get HTML table element and use generateTableWorkbookFromHtml
+      console.log('Exporting in HTML Table mode...');
+      
+      // Find the HTML table element in the Grid tab
+      const htmlTable = document.querySelector('#Grid .editable-grid') as HTMLTableElement;
+      
+      if (!htmlTable) {
+        throw new Error('HTML table element not found. Please ensure the Grid tab is visible.');
+      }
+      
+      console.log('Generating workbook from HTML table element:', htmlTable);
+      const workbookBlob = await workbookManager.generateTableWorkbookFromHtml(htmlTable, fileConfigs);
+      return workbookBlob;
+    }
+    
+  } catch (error) {
+    console.error('Error generating grid workbook:', error);
+    throw error;
+  }
 };
 
 /**
