@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/Bug-bash/static/css/main.eb94b559.css",
+    "main.js": "/Bug-bash/static/js/main.48fc5992.js",
+    "index.html": "/Bug-bash/index.html",
+    "main.eb94b559.css.map": "/Bug-bash/static/css/main.eb94b559.css.map",
+    "main.48fc5992.js.map": "/Bug-bash/static/js/main.48fc5992.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.eb94b559.css",
+    "static/js/main.48fc5992.js"
+  ]
+}
