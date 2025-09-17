@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/Bug-bash/static/css/main.500bcb65.css",
-    "main.js": "/Bug-bash/static/js/main.23e51539.js",
+    "main.js": "/Bug-bash/static/js/main.92eceade.js",
     "index.html": "/Bug-bash/index.html",
     "main.500bcb65.css.map": "/Bug-bash/static/css/main.500bcb65.css.map",
-    "main.23e51539.js.map": "/Bug-bash/static/js/main.23e51539.js.map"
+    "main.92eceade.js.map": "/Bug-bash/static/js/main.92eceade.js.map"
   },
   "entrypoints": [
     "static/css/main.500bcb65.css",
-    "static/js/main.23e51539.js"
+    "static/js/main.92eceade.js"
   ]
 }
