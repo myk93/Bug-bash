@@ -15,6 +15,7 @@ const defaultState: UserSessionState = {
   sessionId: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   activeTab: 'grid',
   excelToggle: false,
+  excelWebEditMode: true,
   sidebarCollapsed: false,
   fileConfigs: {
     tableName: 'Table1',

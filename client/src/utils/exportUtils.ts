@@ -246,8 +246,8 @@ export const downloadWorkbookBlob = async (blob: Blob, filename: string): Promis
  * Open workbook in Excel Web using browser APIs
  * First tries to use Connected Workbooks library, falls back to backend API
  */
-export const openInExcelWeb = async (blob: Blob, filename: string): Promise<void> => {
-  workbookManager.openInExcelWeb(blob, filename);
+export const openInExcelWeb = async (file: Blob, filename?: string, allowTyping?: boolean, allowEdit?: boolean): Promise<void> => {
+  workbookManager.openInExcelWeb(file, filename, allowTyping, allowEdit);
 };
 
 /**
@@ -255,33 +255,37 @@ export const openInExcelWeb = async (blob: Blob, filename: string): Promise<void
  * Checks toggle state and calls appropriate function (Excel Web or Download)
  */
 export const handleExcelToggle = async (
-  blob: Blob, 
-  isDownloadMode: boolean, 
-  activeTab: string
+  blob: Blob,
+  isDownloadMode: boolean,
+  activeTab: string,
+  editMode: boolean = true
 ): Promise<void> => {
   try {
     if (!blob) {
       throw new Error('No workbook blob provided');
     }
-    
+
     // Generate filename
     const filename = generateFileName(activeTab);
-    
+
     console.log('Excel toggle state:', isDownloadMode ? 'Download' : 'Excel Web');
+    console.log('Edit mode:', editMode ? 'Edit' : 'View');
     console.log('Processing with filename:', filename);
-    
+
     if (isDownloadMode) {
       // Download mode - trigger browser download
       console.log('Triggering browser download...');
       await downloadWorkbookBlob(blob, filename);
       return;
     } else {
-      // Excel Web mode - open in Excel Web
+      // Excel Web mode - open in Excel Web with edit/view mode
       console.log('Opening in Excel Web...');
-      await openInExcelWeb(blob, filename);
+      const allowTyping = editMode;
+      const allowEdit = editMode;
+      await openInExcelWeb(blob, filename, allowTyping, allowEdit);
       return;
     }
-    
+
   } catch (error) {
     console.error('Error handling Excel toggle:', error);
     throw error;

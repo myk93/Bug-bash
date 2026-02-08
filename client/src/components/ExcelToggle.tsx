@@ -9,6 +9,7 @@ interface ExcelToggleProps {
   onReset: () => void;
   state: UserSessionState;
   showNotification: (message: string, type?: 'info' | 'success' | 'error' | 'warning') => void;
+  onEditModeChange: (editMode: boolean) => void;
 }
 
 export const ExcelToggle: React.FC<ExcelToggleProps> = ({
@@ -17,7 +18,8 @@ export const ExcelToggle: React.FC<ExcelToggleProps> = ({
   onExport,
   onReset,
   state,
-  showNotification
+  showNotification,
+  onEditModeChange
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -53,9 +55,9 @@ export const ExcelToggle: React.FC<ExcelToggleProps> = ({
       if (blob) {
         // Call handleExcelToggle with the generated blob
         console.log('Calling handleExcelToggle with generated blob...');
-        await handleExcelToggle(blob, excelToggle, activeTab);
-        
-        const message = excelToggle 
+        await handleExcelToggle(blob, excelToggle, activeTab, state.excelWebEditMode);
+
+        const message = excelToggle
           ? `Workbook downloaded successfully`
           : `Opened in Excel Web successfully`;
         showNotification(message, 'success');
@@ -130,6 +132,25 @@ export const ExcelToggle: React.FC<ExcelToggleProps> = ({
           {isExporting ? 'Exporting...' : 'Export'}
         </button>
       </div>
+
+      {/* Edit/View mode toggle - only shown when Excel Web is selected */}
+      {!excelToggle && (
+        <div className="excel-toggle" style={{ marginTop: '10px' }}>
+          <input
+            type="checkbox"
+            id="editModeToggle"
+            className="excel-toggle-input"
+            checked={state.excelWebEditMode}
+            onChange={(e) => onEditModeChange(e.target.checked)}
+          />
+          <label htmlFor="editModeToggle" className="excel-toggle-label">
+            <span className="excel-toggle-text left">View</span>
+            <span className="excel-toggle-slider"></span>
+            <span className="excel-toggle-text right">Edit</span>
+          </label>
+        </div>
+      )}
+
       <button
         id="resetButton"
         className="reset-button"

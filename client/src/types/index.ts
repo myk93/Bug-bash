@@ -3,6 +3,7 @@ export interface UserSessionState {
   sessionId: string;
   activeTab: 'grid' | 'table' | 'pq-query';
   excelToggle: boolean;
+  excelWebEditMode: boolean;
   sidebarCollapsed: boolean;
   fileConfigs: {
     tableName: string;

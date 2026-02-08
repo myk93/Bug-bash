@@ -43,11 +43,21 @@ const App: React.FC = () => {
 
   const handleExcelToggleChange = (checked: boolean) => {
     updateState({ excelToggle: checked });
-    
+
     if (checked) {
       console.log('Switched to Download mode');
     } else {
       console.log('Switched to Excel Web mode');
+    }
+  };
+
+  const handleEditModeChange = (editMode: boolean) => {
+    updateState({ excelWebEditMode: editMode });
+
+    if (editMode) {
+      console.log('Switched to Edit mode');
+    } else {
+      console.log('Switched to View mode');
     }
   };
 
@@ -109,6 +119,7 @@ const App: React.FC = () => {
               onReset={handleResetClick}
               state={state}
               showNotification={showNotification}
+              onEditModeChange={handleEditModeChange}
             />
 
             {/* Tab Navigation */}
